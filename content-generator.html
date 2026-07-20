@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Universal Brand Content Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+<style>
+  :root{
+    --ui-accent:#dc2626;
+    --ui-ink:#12140f;
+    --ui-muted:#55584f;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html, body{overflow-x:hidden; width:100%;}
+  body{
+    margin:0;
+    font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;
+    background:#eef2ee;
+    color:var(--ui-ink);
+    display:flex;
+    min-height:100vh;
+    min-height:100dvh;
+  }
+  .panel{
+    width:400px;
+    flex-shrink:0;
+    background:#ffffff;
+    border-right:3px solid var(--ui-ink);
+    padding:24px;
+    overflow-y:auto;
+    max-height:100vh;
+    max-height:100dvh;
+  }
+  .stage{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px;
+    background:
+      linear-gradient(#e4e9e4 1px, transparent 1px) 0 0/24px 24px,
+      linear-gradient(90deg, #e4e9e4 1px, transparent 1px) 0 0/24px 24px,
+      #f4f6f4;
+  }
+
+  @media (max-width: 760px){
+    body{ display:block; overflow-x:hidden; }
+    .panel{
+      width:100%; max-width:100%; max-height:none;
+      border-right:none; border-bottom:3px solid var(--ui-ink);
+      padding:18px 16px 20px;
+    }
+    .stage{ padding:20px 14px 40px; min-height:60vh; }
+    h1{font-size:15px;}
+    .btns{ position:sticky; bottom:0; background:#fff; padding-top:10px; margin-top:16px; }
+  }
+
+  h1{font-size:16px; margin:0 0 4px; letter-spacing:.02em;}
+  .sub{font-size:12px; color:var(--ui-muted); margin:0 0 18px; font-family:'Courier New',monospace;}
+  .section-title{
+    font-size:11px; font-family:'Courier New',monospace; text-transform:uppercase;
+    letter-spacing:.08em; color:#fff; background:var(--ui-ink); padding:6px 8px;
+    margin:22px 0 4px;
+  }
+  label{
+    display:block; font-size:11px; font-family:'Courier New',monospace;
+    text-transform:uppercase; letter-spacing:.06em; color:var(--ui-muted); margin:14px 0 6px;
+  }
+  select, input[type=text], textarea, input[type=color]{
+    width:100%; padding:10px 10px; border:2px solid var(--ui-ink);
+    font-family:inherit; font-size:16px; background:#fff; color:var(--ui-ink);
+    -webkit-appearance:none; appearance:none; border-radius:0;
+  }
+  input[type=color]{padding:4px; height:42px;}
+  .colorField{display:flex; gap:6px; align-items:stretch;}
+  .colorField input[type=color]{width:44px; flex-shrink:0; padding:3px;}
+  .colorField input.hex{
+    flex:1; min-width:0; font-family:'Courier New',monospace; font-size:14px;
+    text-transform:uppercase; letter-spacing:.03em;
+  }
+  .colorField input.hex.invalid{border-color:#dc2626;}
+  textarea{resize:vertical; min-height:64px; font-size:14px;}
+  .row{display:flex; gap:10px;}
+  .row > div{flex:1; min-width:0;}
+  .hint{font-size:10.5px; color:#8a8d84; margin-top:4px; font-family:'Courier New',monospace;}
+  .btns{margin-top:22px; display:flex; flex-direction:column; gap:8px;}
+  button{
+    border:2px solid var(--ui-ink); background:var(--ui-accent); color:#fff;
+    font-weight:700; font-size:15px; padding:14px 14px; cursor:pointer;
+    box-shadow:3px 3px 0 var(--ui-ink); -webkit-appearance:none; appearance:none;
+    border-radius:0; min-height:48px;
+  }
+  button.secondary{background:#fff; color:var(--ui-ink);}
+  button.small{
+    font-size:12px; padding:8px 10px; min-height:auto; box-shadow:2px 2px 0 var(--ui-ink);
+  }
+  button:active{box-shadow:1px 1px 0 var(--ui-ink); transform:translate(2px,2px);}
+  button:disabled{opacity:.5; cursor:default;}
+  #status{font-size:11px; font-family:'Courier New',monospace; color:var(--ui-muted); margin-top:8px; min-height:14px;}
+  canvas{ box-shadow:8px 8px 0 rgba(0,0,0,.15); max-width:100%; height:auto; background:#fff; }
+  details{margin-top:22px;}
+  summary{
+    font-size:11px; font-family:'Courier New',monospace; text-transform:uppercase;
+    letter-spacing:.06em; color:var(--ui-muted); cursor:pointer; padding:6px 0;
+  }
+  #themeJson{font-family:'Courier New',monospace; font-size:11px; min-height:90px;}
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <h1>universal content generator</h1>
+  <p class="sub">// build branded PNG / JPEG / GIF post images for any project</p>
+
+  <div class="section-title">Brand / style</div>
+
+  <label>Theme preset</label>
+  <select id="themePreset">
+    <option value="neoBrutalist">Neo-brutalist (hard shadow, sharp)</option>
+    <option value="softMinimal">Soft minimal (rounded, blur shadow)</option>
+    <option value="darkMode">Dark mode</option>
+    <option value="editorial">Editorial (serif headline)</option>
+    <option value="custom">Custom (my current settings)</option>
+  </select>
+
+  <div class="row">
+    <div><label>Background</label>
+      <div class="colorField"><input type="color" id="bgColor"><input type="text" class="hex" id="bgColorHex" maxlength="7" placeholder="#RRGGBB"></div>
+    </div>
+    <div><label>Card surface</label>
+      <div class="colorField"><input type="color" id="surfaceColor"><input type="text" class="hex" id="surfaceColorHex" maxlength="7" placeholder="#RRGGBB"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div><label>Text (ink)</label>
+      <div class="colorField"><input type="color" id="inkColor"><input type="text" class="hex" id="inkColorHex" maxlength="7" placeholder="#RRGGBB"></div>
+    </div>
+    <div><label>Muted text</label>
+      <div class="colorField"><input type="color" id="mutedColor"><input type="text" class="hex" id="mutedColorHex" maxlength="7" placeholder="#RRGGBB"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div><label>Accent</label>
+      <div class="colorField"><input type="color" id="accent"><input type="text" class="hex" id="accentHex" maxlength="7" placeholder="#RRGGBB"></div>
+    </div>
+    <div><label>Border</label>
+      <div class="colorField"><input type="color" id="borderColor"><input type="text" class="hex" id="borderColorHex" maxlength="7" placeholder="#RRGGBB"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label>Border weight</label>
+      <select id="borderWeight">
+        <option value="thin">Thin</option>
+        <option value="medium">Medium</option>
+        <option value="thick">Thick</option>
+      </select>
+    </div>
+    <div>
+      <label>Corners</label>
+      <select id="cornerStyle">
+        <option value="sharp">Sharp</option>
+        <option value="rounded">Rounded</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label>Shadow</label>
+      <select id="shadowStyle">
+        <option value="hard">Hard offset</option>
+        <option value="soft">Soft blur</option>
+        <option value="none">None</option>
+      </select>
+    </div>
+    <div>
+      <label>Background pattern</label>
+      <select id="bgPattern">
+        <option value="grid">Grid</option>
+        <option value="dots">Dots</option>
+        <option value="none">None</option>
+      </select>
+    </div>
+  </div>
+
+  <label>Font pairing</label>
+  <select id="fontPairing">
+    <option value="mono-sans">Mono labels + bold sans headline</option>
+    <option value="all-sans">All sans-serif</option>
+    <option value="serif-sans">Serif headline + sans body</option>
+  </select>
+
+  <label>Shimmer intensity <span class="hint">(animated sweep, GIF/preview only)</span></label>
+  <select id="shimmerIntensity">
+    <option value="off">Off</option>
+    <option value="subtle">Subtle</option>
+    <option value="bold">Bold</option>
+  </select>
+
+  <details>
+    <summary>Save / load this theme as JSON</summary>
+    <label>Theme JSON</label>
+    <textarea id="themeJson" placeholder="Paste a theme JSON here to apply it"></textarea>
+    <div class="row" style="margin-top:8px;">
+      <div><button class="secondary small" id="btnCopyTheme" type="button">Copy current theme</button></div>
+      <div><button class="secondary small" id="btnApplyTheme" type="button">Apply pasted theme</button></div>
+    </div>
+    <p class="hint">Copy this JSON to reuse the exact same look on your next project — paste it back in here any time.</p>
+  </details>
+
+  <div class="section-title">Content</div>
+
+  <label>Post type</label>
+  <select id="preset">
+    <option value="announcement">Announcement / Update</option>
+    <option value="alpha">Tip / Alpha</option>
+    <option value="milestone">Milestone / Stat</option>
+    <option value="quote">Quote / Testimonial</option>
+    <option value="reminder">Reminder / Warning</option>
+  </select>
+
+  <label>Tag chip (4-6 chars)</label>
+  <input type="text" id="tag" maxlength="8">
+
+  <label>Eyebrow line</label>
+  <input type="text" id="eyebrow">
+
+  <label>Headline <span class="hint">(wrap a word in ** ** to highlight in accent color)</span></label>
+  <textarea id="headline"></textarea>
+
+  <div id="statRow" style="display:none;">
+    <div class="row">
+      <div><label>Stat number</label><input type="text" id="statNum"></div>
+      <div><label>Stat label</label><input type="text" id="statLabel"></div>
+    </div>
+  </div>
+
+  <label>Body text</label>
+  <textarea id="body"></textarea>
+
+  <label>Footer</label>
+  <input type="text" id="footer">
+
+  <label>Format</label>
+  <select id="ratio">
+    <option value="landscape">Landscape 1200×675</option>
+    <option value="square">Square 1080×1080</option>
+    <option value="portrait">Portrait 1080×1350</option>
+  </select>
+
+  <label>Avatar (optional)</label>
+  <div class="row" style="align-items:center;">
+    <div style="flex:0 0 auto;">
+      <div id="avatarPreview" style="width:42px;height:42px;border:2px solid var(--ui-ink);border-radius:50%;background:#f2f3ef center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:9px;color:#9a9d94;overflow:hidden;">none</div>
+    </div>
+    <div style="flex:1;">
+      <input type="file" id="avatarFile" accept="image/*" style="padding:8px 6px; font-size:12px;">
+    </div>
+    <div style="flex:0 0 auto;">
+      <button type="button" class="secondary small" id="btnRemoveAvatar">Remove</button>
+    </div>
+  </div>
+  <p class="hint">Shows as a pulsing profile circle near the footer.</p>
+
+  <div class="btns">
+    <button class="secondary" id="btnPng">Download PNG</button>
+    <button class="secondary" id="btnJpg">Download JPEG</button>
+    <button id="btnGif">Download animated GIF</button>
+  </div>
+  <div id="status"></div>
+  <div class="hint" id="iosHint" style="display:none; margin-top:6px;">On iPhone: each button opens the image in a new tab — long-press it and tap "Save to Photos".</div>
+</div>
+
+<div class="stage">
+  <canvas id="canvas"></canvas>
+</div>
+
+<script>
+const THEMES = {
+  neoBrutalist:{bg:'#d7e3d8', surface:'#ffffff', ink:'#12140f', muted:'#55584f', accent:'#dc2626', border:'#12140f', borderWeight:'thick', corner:'sharp', shadow:'hard', pattern:'grid', fonts:'mono-sans', shimmer:'bold'},
+  softMinimal:{bg:'#f5f5f4', surface:'#ffffff', ink:'#1c1c1c', muted:'#8a8a8a', accent:'#2563eb', border:'#e5e5e5', borderWeight:'thin', corner:'rounded', shadow:'soft', pattern:'none', fonts:'all-sans', shimmer:'subtle'},
+  darkMode:{bg:'#0b0e0c', surface:'#15181a', ink:'#f2f2f0', muted:'#9aa09b', accent:'#22d3ee', border:'#2a2f2b', borderWeight:'medium', corner:'rounded', shadow:'soft', pattern:'dots', fonts:'all-sans', shimmer:'bold'},
+  editorial:{bg:'#efe9de', surface:'#fffdf8', ink:'#231f1a', muted:'#7a7368', accent:'#b34700', border:'#231f1a', borderWeight:'medium', corner:'sharp', shadow:'hard', pattern:'none', fonts:'serif-sans', shimmer:'off'}
+};
+
+const CONTENT_PRESETS = {
+  announcement:{tag:'NEWS', eyebrow:'PROJECT UPDATE · V2', headline:'New feature is **live** today', body:'A short line about what shipped and why it matters to your users.', footer:'@yourhandle · yoursite.com'},
+  alpha:{tag:'TIP', eyebrow:'PRO TIP', headline:'Do this **one thing** first', body:'One concrete, specific tip your audience can act on right away.', footer:'@yourhandle · yoursite.com'},
+  milestone:{tag:'STAT', eyebrow:'MILESTONE', headline:'**10,000** users onboarded', stat:'10,000', statLabel:'total users', body:'A short line of context about how you got here.', footer:'@yourhandle · yoursite.com'},
+  quote:{tag:'QUOTE', eyebrow:'FROM THE COMMUNITY', headline:'This saved me **hours** every week', body:'— shared by a user in your community', footer:'@yourhandle · yoursite.com'},
+  reminder:{tag:'CTA', eyebrow:'HEADS UP', headline:'Please read **before** you continue', body:'A short warning or reminder relevant to your audience.', footer:'@yourhandle · yoursite.com'}
+};
+
+const $ = id => document.getElementById(id);
+const canvas = $('canvas');
+const ctx = canvas.getContext('2d');
+
+function hexToRgba(hex, alpha){
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function loadContentPreset(key){
+  const p = CONTENT_PRESETS[key];
+  $('tag').value = p.tag;
+  $('eyebrow').value = p.eyebrow;
+  $('headline').value = p.headline;
+  $('body').value = p.body;
+  $('footer').value = p.footer;
+  $('statRow').style.display = key === 'milestone' ? 'block' : 'none';
+  if(key === 'milestone'){
+    $('statNum').value = p.stat;
+    $('statLabel').value = p.statLabel;
+  }
+  render();
+}
+
+function applyTheme(t){
+  $('bgColor').value = t.bg;
+  $('surfaceColor').value = t.surface;
+  $('inkColor').value = t.ink;
+  $('mutedColor').value = t.muted;
+  $('accent').value = t.accent;
+  $('borderColor').value = t.border;
+  $('borderWeight').value = t.borderWeight;
+  $('cornerStyle').value = t.corner;
+  $('shadowStyle').value = t.shadow;
+  $('bgPattern').value = t.pattern;
+  $('fontPairing').value = t.fonts;
+  $('shimmerIntensity').value = t.shimmer || 'subtle';
+  ['bgColor','surfaceColor','inkColor','mutedColor','accent','borderColor'].forEach(id=>{
+    $(id+'Hex').value = $(id).value.toUpperCase();
+    $(id+'Hex').classList.remove('invalid');
+  });
+  render();
+}
+
+function currentTheme(){
+  return {
+    bg: $('bgColor').value, surface: $('surfaceColor').value,
+    ink: $('inkColor').value, muted: $('mutedColor').value,
+    accent: $('accent').value, border: $('borderColor').value,
+    borderWeight: $('borderWeight').value, corner: $('cornerStyle').value,
+    shadow: $('shadowStyle').value, pattern: $('bgPattern').value,
+    fonts: $('fontPairing').value, shimmer: $('shimmerIntensity').value
+  };
+}
+
+let avatarImg = null;
+
+function currentState(){
+  const key = $('preset').value;
+  return {
+    key,
+    tag: $('tag').value, eyebrow: $('eyebrow').value, headline: $('headline').value,
+    body: $('body').value, footer: $('footer').value,
+    statNum: $('statNum').value, statLabel: $('statLabel').value,
+    ratio: $('ratio').value,
+    theme: currentTheme(),
+    avatarImg: avatarImg
+  };
+}
+
+function dims(ratio){
+  if(ratio === 'square') return {w:1080,h:1080};
+  if(ratio === 'portrait') return {w:1080,h:1350};
+  return {w:1200,h:675};
+}
+
+function getFonts(pairing){
+  if(pairing === 'all-sans') return {
+    mono:"-apple-system, Arial, sans-serif", head:"-apple-system, Arial, sans-serif", body:"-apple-system, Arial, sans-serif", weight:800
+  };
+  if(pairing === 'serif-sans') return {
+    mono:"-apple-system, Arial, sans-serif", head:"Georgia, 'Times New Roman', serif", body:"-apple-system, Arial, sans-serif", weight:700
+  };
+  return {
+    mono:"'Courier New', monospace", head:"-apple-system, Arial, sans-serif", body:"-apple-system, Arial, sans-serif", weight:800
+  };
+}
+
+function borderPx(weight, W){
+  if(weight === 'thin') return Math.max(1.5, W*0.0014);
+  if(weight === 'medium') return Math.max(2, W*0.0022);
+  return Math.max(2.5, W*0.004);
+}
+
+function roundedPath(c, x, y, w, h, r){
+  c.beginPath();
+  if(r <= 0){ c.rect(x,y,w,h); return; }
+  c.moveTo(x+r,y);
+  c.arcTo(x+w,y,x+w,y+h,r);
+  c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r);
+  c.arcTo(x,y,x+w,y,r);
+  c.closePath();
+}
+
+function drawTracked(c, text, cx, y, opts){
+  const {font, color, spacing, align='center'} = opts;
+  c.font = font;
+  let total = 0;
+  const widths = [...text].map(ch=>{const w=c.measureText(ch).width; total += w + spacing; return w;});
+  total -= spacing;
+  let x = align==='center' ? cx - total/2 : cx;
+  c.fillStyle = color;
+  c.textBaseline = 'alphabetic';
+  [...text].forEach((ch,i)=>{ c.fillText(ch, x, y); x += widths[i] + spacing; });
+}
+
+function layoutWords(c, text, font, accentFont, maxWidth){
+  const tokens = [];
+  text.split(/\*\*(.+?)\*\*/g).forEach((chunk, i)=>{
+    const accent = i % 2 === 1;
+    chunk.split(/\s+/).filter(Boolean).forEach(w => tokens.push({w, accent}));
+  });
+  const lines = [];
+  let line = [], lineWidth = 0;
+  const spaceW = (()=>{c.font = font; return c.measureText(' ').width;})();
+  tokens.forEach(tok=>{
+    c.font = tok.accent ? accentFont : font;
+    const w = c.measureText(tok.w).width;
+    const extra = line.length ? spaceW : 0;
+    if(lineWidth + extra + w > maxWidth && line.length){ lines.push(line); line = [tok]; lineWidth = w; }
+    else { line.push(tok); lineWidth += extra + w; }
+  });
+  if(line.length) lines.push(line);
+  return {lines, spaceW};
+}
+
+function drawWrapped(c, text, font, accentFont, accentColor, inkColor, cx, startY, maxWidth, lineHeight, align='center'){
+  const {lines, spaceW} = layoutWords(c, text, font, accentFont, maxWidth);
+  let y = startY;
+  lines.forEach(line=>{
+    let lw = 0;
+    line.forEach((tok,i)=>{ c.font = tok.accent ? accentFont : font; lw += c.measureText(tok.w).width + (i? spaceW:0); });
+    let x = align==='center' ? cx - lw/2 : cx;
+    line.forEach(tok=>{
+      c.font = tok.accent ? accentFont : font;
+      c.fillStyle = tok.accent ? accentColor : inkColor;
+      c.textBaseline = 'alphabetic';
+      c.fillText(tok.w, x, y);
+      x += c.measureText(tok.w).width + spaceW;
+    });
+    y += lineHeight;
+  });
+  return y;
+}
+
+function drawAvatar(c, x, y, r, img, th, phase, isStatic){
+  if(!img) return;
+  const pulse = isStatic ? 0.5 : (0.5 + 0.5*Math.sin(phase*Math.PI*2));
+  c.save();
+  c.beginPath();
+  c.arc(x, y, r + r*0.3*pulse, 0, Math.PI*2);
+  c.strokeStyle = hexToRgba(th.accent, 0.3 + 0.35*pulse);
+  c.lineWidth = Math.max(1.5, r*0.14);
+  c.stroke();
+  c.restore();
+
+  c.save();
+  c.beginPath();
+  c.arc(x, y, r, 0, Math.PI*2);
+  c.closePath();
+  c.clip();
+  c.drawImage(img, x-r, y-r, r*2, r*2);
+  c.restore();
+
+  c.beginPath();
+  c.arc(x, y, r, 0, Math.PI*2);
+  c.lineWidth = Math.max(1.5, r*0.08);
+  c.strokeStyle = th.border;
+  c.stroke();
+}
+
+function draw(c, W, H, state, phase, opts){
+  opts = opts || {};
+  const isStatic = !!opts.static;
+  const cursorOn = isStatic ? true : (phase < 0.5);
+  const th = state.theme;
+  const F = getFonts(th.fonts);
+  c.clearRect(0,0,W,H);
+
+  c.fillStyle = th.bg;
+  c.fillRect(0,0,W,H);
+
+  if(th.pattern === 'grid'){
+    c.strokeStyle = hexToRgba(th.ink, 0.07);
+    c.lineWidth = 1;
+    const grid = Math.round(W*0.032);
+    for(let x=0;x<=W;x+=grid){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,H); c.stroke(); }
+    for(let y=0;y<=H;y+=grid){ c.beginPath(); c.moveTo(0,y); c.lineTo(W,y); c.stroke(); }
+  } else if(th.pattern === 'dots'){
+    c.fillStyle = hexToRgba(th.ink, 0.14);
+    const grid = Math.round(W*0.035);
+    for(let x=grid/2;x<=W;x+=grid){
+      for(let y=grid/2;y<=H;y+=grid){
+        c.beginPath(); c.arc(x,y,W*0.0018,0,Math.PI*2); c.fill();
+      }
+    }
+  }
+
+  const mx = W*0.08, my = H*0.08;
+  const cardX = mx, cardY = my, cardW = W-mx*2, cardH = H-my*2;
+  const bw = borderPx(th.borderWeight, W);
+  const radius = th.corner === 'rounded' ? W*0.022 : 0;
+
+  if(th.shadow === 'hard'){
+    const off = Math.round(W*0.009);
+    c.fillStyle = th.border;
+    roundedPath(c, cardX+off, cardY+off, cardW, cardH, radius);
+    c.fill();
+  }
+
+  if(th.shadow === 'soft'){
+    c.save();
+    c.shadowColor = hexToRgba(th.ink, 0.22);
+    c.shadowBlur = W*0.02;
+    c.shadowOffsetX = W*0.004;
+    c.shadowOffsetY = W*0.006;
+  }
+  c.fillStyle = th.surface;
+  roundedPath(c, cardX, cardY, cardW, cardH, radius);
+  c.fill();
+  if(th.shadow === 'soft') c.restore();
+
+  c.lineWidth = bw;
+  c.strokeStyle = th.border;
+  roundedPath(c, cardX, cardY, cardW, cardH, radius);
+  c.stroke();
+
+  if(!isStatic && th.shimmer !== 'off'){
+    const bold = th.shimmer === 'bold';
+    c.save();
+    roundedPath(c, cardX, cardY, cardW, cardH, radius);
+    c.clip();
+    const bandW = cardW * (bold ? 0.32 : 0.2);
+    const travel = cardW + cardH*0.6 + bandW*2;
+    const pos = -bandW + phase*travel;
+    c.save();
+    c.translate(cardX + pos, cardY - cardH*0.25);
+    c.rotate(-Math.PI/9);
+    const peakAlpha = bold ? 0.4 : 0.2;
+    const grad = c.createLinearGradient(0,0,bandW,0);
+    grad.addColorStop(0, hexToRgba('#ffffff', 0));
+    grad.addColorStop(0.5, hexToRgba('#ffffff', peakAlpha));
+    grad.addColorStop(1, hexToRgba('#ffffff', 0));
+    c.fillStyle = grad;
+    c.fillRect(0, -cardH*0.5, bandW, cardH*2);
+    c.restore();
+    c.restore();
+  }
+
+  const cx = cardX + cardW/2;
+  const padX = cardW*0.09;
+  const maxWidth = cardW - padX*2;
+
+  const chipPad = W*0.012;
+  c.font = `700 ${Math.round(W*0.016)}px ${F.mono}`;
+  const tagW = c.measureText(state.tag||'TAG').width + chipPad*2.4;
+  const chipH = W*0.034;
+  const chipX = cardX + padX, chipY = cardY + cardH*0.07;
+  c.fillStyle = hexToRgba(th.ink, 0.05);
+  roundedPath(c, chipX, chipY, tagW, chipH, radius*0.4);
+  c.fill();
+  c.strokeStyle = th.border; c.lineWidth = Math.max(1.2, bw*0.6);
+  roundedPath(c, chipX, chipY, tagW, chipH, radius*0.4);
+  c.stroke();
+  c.fillStyle = th.accent;
+  c.textBaseline = 'middle';
+  c.fillText((state.tag||'TAG').toUpperCase(), chipX+chipPad*1.2, chipY+chipH/2+1);
+
+  let y = cardY + cardH*0.19;
+  drawTracked(c, (state.eyebrow||'').toUpperCase(), cx, y,
+    {font:`700 ${Math.round(W*0.0165)}px ${F.mono}`, color:th.accent, spacing:W*0.0028});
+
+  y = cardY + cardH*0.30;
+  const headFont = `${F.weight} ${Math.round(W*0.052)}px ${F.head}`;
+  const lineHeight = W*0.062;
+  y = drawWrapped(c, state.headline||'', headFont, headFont, th.accent, th.ink, cx, y, maxWidth, lineHeight);
+
+  if(state.key === 'milestone' && state.statNum){
+    y += H*0.01;
+    c.font = `${F.weight} ${Math.round(W*0.075)}px ${F.head}`;
+    c.fillStyle = th.accent; c.textAlign='center'; c.textBaseline='alphabetic';
+    c.fillText(state.statNum, cx, y + W*0.05);
+    c.font = `700 ${Math.round(W*0.014)}px ${F.mono}`;
+    c.fillStyle = th.muted;
+    c.fillText((state.statLabel||'').toUpperCase(), cx, y + W*0.075);
+    c.textAlign='left';
+    y += W*0.095;
+  }
+
+  y += H*0.045;
+  const bodyFont = `400 ${Math.round(W*0.0205)}px ${F.body}`;
+  y = drawWrapped(c, state.body||'', bodyFont, bodyFont, th.muted, th.muted, cx, y, maxWidth*0.86, W*0.0295);
+
+  const footY = cardY + cardH*0.93;
+  if(state.avatarImg){
+    const avR = W*0.026;
+    drawAvatar(c, cardX + padX + avR, footY - avR*0.55, avR, state.avatarImg, th, phase, isStatic);
+  }
+  c.font = `700 ${Math.round(W*0.0135)}px ${F.mono}`;
+  c.fillStyle = th.muted;
+  c.textAlign = 'center';
+  const footText = (state.footer||'') + (cursorOn ? ' _' : '  ');
+  c.fillText(footText, cx, footY);
+  c.textAlign = 'left';
+}
+
+let previewPhase = 0;
+function tick(ts){
+  previewPhase = (ts % 1400) / 1400;
+  const state = currentState();
+  const {w,h} = dims(state.ratio);
+  if(canvas.width !== w || canvas.height !== h){ canvas.width = w; canvas.height = h; }
+  draw(ctx, w, h, state, previewPhase, {static:false});
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+function render(){ /* kept as a no-op hook: the tick() loop above redraws continuously */ }
+
+function renderStatic(phase){
+  const state = currentState();
+  const {w,h} = dims(state.ratio);
+  canvas.width = w; canvas.height = h;
+  draw(ctx, w, h, state, phase, {static:true});
+  return {state, w, h};
+}
+
+$('themePreset').addEventListener('change', e=>{
+  const key = e.target.value;
+  if(key !== 'custom') applyTheme(THEMES[key]);
+});
+
+['preset'].forEach(id => $(id).addEventListener('change', e => loadContentPreset(e.target.value)));
+['tag','eyebrow','headline','body','footer','statNum','statLabel','ratio'].forEach(id=>{
+  $(id).addEventListener('input', render);
+});
+['bgColor','surfaceColor','inkColor','mutedColor','accent','borderColor','borderWeight','cornerStyle','shadowStyle','bgPattern','fontPairing','shimmerIntensity'].forEach(id=>{
+  $(id).addEventListener('input', ()=>{ $('themePreset').value = 'custom'; render(); });
+});
+
+function wireColorHex(id){
+  const colorEl = $(id), hexEl = $(id+'Hex');
+  colorEl.addEventListener('input', ()=>{
+    hexEl.value = colorEl.value.toUpperCase();
+    hexEl.classList.remove('invalid');
+  });
+  hexEl.addEventListener('input', ()=>{
+    let v = hexEl.value.trim();
+    if(v && !v.startsWith('#')) v = '#'+v;
+    if(/^#[0-9A-Fa-f]{6}$/.test(v)){
+      hexEl.classList.remove('invalid');
+      colorEl.value = v;
+      colorEl.dispatchEvent(new Event('input'));
+    } else {
+      hexEl.classList.add('invalid');
+    }
+  });
+  hexEl.addEventListener('blur', ()=>{
+    hexEl.value = colorEl.value.toUpperCase();
+    hexEl.classList.remove('invalid');
+  });
+}
+['bgColor','surfaceColor','inkColor','mutedColor','accent','borderColor'].forEach(wireColorHex);
+
+$('btnCopyTheme').addEventListener('click', ()=>{
+  const json = JSON.stringify(currentTheme(), null, 2);
+  $('themeJson').value = json;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(json).then(()=>{ $('status').textContent = 'theme JSON copied to clipboard'; })
+      .catch(()=>{ $('status').textContent = 'theme JSON shown below — copy manually'; });
+  } else {
+    $('status').textContent = 'theme JSON shown below — copy manually';
+  }
+});
+
+$('btnApplyTheme').addEventListener('click', ()=>{
+  try{
+    const t = JSON.parse($('themeJson').value);
+    applyTheme(t);
+    $('themePreset').value = 'custom';
+    $('status').textContent = 'theme applied';
+  }catch(err){
+    $('status').textContent = 'could not parse theme JSON';
+  }
+});
+
+$('avatarFile').addEventListener('change', (e)=>{
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const img = new Image();
+    img.onload = ()=>{
+      avatarImg = img;
+      $('avatarPreview').style.backgroundImage = `url(${reader.result})`;
+      $('avatarPreview').textContent = '';
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+$('btnRemoveAvatar').addEventListener('click', ()=>{
+  avatarImg = null;
+  $('avatarFile').value = '';
+  $('avatarPreview').style.backgroundImage = 'none';
+  $('avatarPreview').textContent = 'none';
+});
+
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+function download(dataUrl, filename){
+  if(isIOS){
+    const win = window.open(dataUrl, '_blank');
+    $('status').textContent = win
+      ? 'opened in a new tab — long-press the image and choose "Save to Photos"'
+      : 'pop-up blocked — allow pop-ups for this site, then try again';
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = dataUrl; a.download = filename; a.click();
+}
+
+$('btnPng').addEventListener('click', ()=>{ renderStatic(0.5); download(canvas.toDataURL('image/png'), 'post.png'); });
+$('btnJpg').addEventListener('click', ()=>{ renderStatic(0.5); download(canvas.toDataURL('image/jpeg', 0.92), 'post.jpg'); });
+
+$('btnGif').addEventListener('click', async ()=>{
+  const status = $('status');
+  const btn = $('btnGif');
+  btn.disabled = true;
+  status.textContent = 'rendering frames...';
+  try{
+    const state = currentState();
+    const {w,h} = dims(state.ratio);
+    const off = document.createElement('canvas');
+    off.width = w; off.height = h;
+    const offCtx = off.getContext('2d');
+
+    const workerSrc = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js').then(r=>r.text());
+    const workerBlobUrl = URL.createObjectURL(new Blob([workerSrc], {type:'application/javascript'}));
+
+    const gif = new GIF({ workers: 2, quality: 8, width: w, height: h, workerScript: workerBlobUrl });
+
+    const frameCount = 12;
+    for(let i=0;i<frameCount;i++){
+      const phase = i/frameCount;
+      draw(offCtx, w, h, state, phase, {static:false});
+      gif.addFrame(offCtx, {copy:true, delay: 90});
+    }
+
+    gif.on('finished', function(blob){
+      const url = URL.createObjectURL(blob);
+      download(url, 'post.gif');
+      status.textContent = 'done — gif downloaded';
+      btn.disabled = false;
+    });
+    gif.on('progress', p => { status.textContent = 'encoding... ' + Math.round(p*100) + '%'; });
+    gif.render();
+  }catch(err){
+    status.textContent = 'error: ' + err.message;
+    btn.disabled = false;
+  }
+});
+
+$('themePreset').value = 'neoBrutalist';
+applyTheme(THEMES.neoBrutalist);
+$('preset').value = 'announcement';
+loadContentPreset('announcement');
+if(isIOS) $('iosHint').style.display = 'block';
+</script>
+</body>
+</html>
